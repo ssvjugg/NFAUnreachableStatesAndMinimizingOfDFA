@@ -27,6 +27,8 @@ public class Main {
             var l = State.readNkaFromFile(Paths.get("nka.txt"));
             for (State s : l)
                 System.out.println(s);
+            System.out.println();
+            State.removeUnreachableStates(l);
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }

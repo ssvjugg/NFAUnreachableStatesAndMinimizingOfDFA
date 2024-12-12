@@ -36,33 +36,33 @@ public class State {
     /**
      * This function read from states from file
      * @param p Path to file in system
-     * @return List of States
+     * @return List of States that describes NKA
      */
     public static List<State> readNkaFromFile(Path p) throws IOException {
         List<State> states = new ArrayList<>();
         try (BufferedReader br = Files.newBufferedReader(p, StandardCharsets.UTF_8)) {
             String line;
             while ((line = br.readLine()) != null) {
-                String[] ln = line.split("\\s+");
-                State curState;
-                if ((curState = containsState(ln[1], states)) == null) {
-                    curState = new State(ln[1], "f".equals(ln[0]));
-                    states.add(curState);
+                String[] parts = line.split("\\s+");
+                State currentState;
+                if ((currentState = containsState(parts[1], states)) == null) {
+                    currentState = new State(parts[1], "f".equals(parts[0]));
+                    states.add(currentState);
                 }
-                else if ("f".equals(ln[0])){
-                    curState.finalState = true;
+                else if ("f".equals(parts[0])){
+                    currentState.finalState = true;
                 }
 
-                for (int i = 2; i < ln.length; i++) {
-                    String[] transition = ln[i].split("\\|");
+                for (int i = 2; i < parts.length; i++) {
+                    String[] transition = parts[i].split("\\|");
                     State tempState;
                     if ((tempState = containsState(transition[1], states)) == null) {
                         tempState = new State(transition[1], false);
-                        curState.addTransition(transition[0], tempState);
+                        currentState.addTransition(transition[0], tempState);
                         states.add(tempState);
                     }
                     else {
-                        curState.addTransition(transition[0], tempState);
+                        currentState.addTransition(transition[0], tempState);
                     }
                 }
             }
@@ -78,8 +78,32 @@ public class State {
         return null;
     }
 
+    /**
+     * This function remove unreachable states from NKA that is described by List of States
+     * @param states List of States that will be modified after applying this function
+     */
     public static void removeUnreachableStates(List<State> states) {
-
+        if (states.isEmpty()) throw new IllegalStateException("List must contains at least one state");
+        Set<State> reachableStates = new LinkedHashSet<>();
+        reachableStates.add(states.get(0)); // Added start state
+        boolean loopFlag = true;
+        while (loopFlag) {
+            loopFlag = false;
+            List<State> statesToAdd = new ArrayList<>();
+            for (State st : reachableStates) {
+                for (List<State> transitions : st.transitions.values()) {
+                    for (State transition : transitions) {
+                        if (!reachableStates.contains(transition)) {
+                            statesToAdd.add(transition);
+                            loopFlag = true;
+                        }
+                    }
+                }
+            }
+            reachableStates.addAll(statesToAdd);
+        }
+        states.removeIf(st -> !reachableStates.contains(st));
+        //states.forEach(System.out::println); // Prints
     }
 
     @Override
