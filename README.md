@@ -5,7 +5,6 @@ This project implements the removal of unreachable states from an undetermined f
 
 ### The example of input file:
 
----
 \- S 0|A 1|B  
 \- A 0|E 1|B  
 \- B 0|D 1|C  
