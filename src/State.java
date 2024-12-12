@@ -103,7 +103,6 @@ public class State {
             reachableStates.addAll(statesToAdd);
         }
         states.removeIf(st -> !reachableStates.contains(st));
-        //states.forEach(System.out::println); // Prints
     }
 
     @Override
