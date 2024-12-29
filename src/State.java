@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class State {
     private final String name;
@@ -103,6 +104,80 @@ public class State {
             reachableStates.addAll(statesToAdd);
         }
         states.removeIf(st -> !reachableStates.contains(st));
+    }
+
+    /**
+     *
+     * @param states
+     * @return
+     */
+    public static List<State> minimizingDFA(List<State> states) {
+        var partitionedStates = states.stream().collect(Collectors.partitioningBy(State::isFinalState, Collectors.toSet()));
+        List<Set<State>> partition = List.of(partitionedStates.get(false), partitionedStates.get(true));  // Divided states into two groups
+        boolean flag;
+
+        do {
+            List<Set<State>> newPartition = new ArrayList<>();
+
+            for (Set<State> part : partition) {
+                Map<String, Set<State>> groups = new HashMap<>();
+                for (State state : part) {
+                    // TODO
+                    String key = getTransitionKey(state, partition);
+                    groups.computeIfAbsent(key, k -> new HashSet<>()).add(state);
+                }
+                newPartition.addAll(groups.values());
+            }
+
+            flag = newPartition.size() != partition.size();
+            partition = newPartition;
+        } while (flag);
+
+        return createMinimizedDfa(partition, states); // TODO
+    }
+
+    private static String getTransitionKey(State state, List<Set<State>> partitions) {
+        List<Integer> key = new ArrayList<>();
+        List<String> symbols = new ArrayList<>(state.transitions.keySet());
+        Collections.sort(symbols);
+
+        for (String symbol : symbols) {
+            List<State> nextStates = state.transitions.get(symbol);
+            Set<State> nextStatePartition = partitions.stream()
+                    .filter(p -> p.stream().anyMatch(s -> nextStates.contains(s)))
+                    .findFirst()
+                    .orElse(null);
+            key.add(partitions.indexOf(nextStatePartition));
+        }
+        return String.join(",", key.stream().map(String::valueOf).collect(Collectors.toList()));
+    }
+
+    private static List<State> createMinimizedDfa(List<Set<State>> partitions, List<State> originalStates) {
+        List<State> minimizedStates = new ArrayList<>();
+        for (int i = 0; i < partitions.size(); i++) {
+            Set<State> partition = partitions.get(i);
+            State representative = partition.iterator().next();
+            State newState = new State(representative.name, representative.isFinalState());
+            minimizedStates.add(newState);
+        }
+
+        // Make transitions
+        for (Set<State> partition : partitions) {
+            State representative = partition.iterator().next();
+            int newStateIndex = partitions.indexOf(partition);
+
+            for (Map.Entry<String, List<State>> transition : representative.transitions.entrySet()) {
+                List<State> nextStates = transition.getValue();
+                Set<State> nextStatePartition = partitions.stream()
+                        .filter(p -> p.contains(nextStates.get(0)))
+                        .findFirst()
+                        .orElse(null);
+                int nextStateIndex = partitions.indexOf(nextStatePartition);
+                minimizedStates.get(newStateIndex).addTransition(transition.getKey(), minimizedStates.get(nextStateIndex));
+            }
+        }
+
+        return minimizedStates;
     }
 
     @Override

@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Main {
@@ -10,6 +11,8 @@ public class Main {
             System.out.println();
             State.removeUnreachableStates(l);
             l.forEach(System.out::println);
+            System.out.println();
+            State.minimizingDFA(State.readNkaFromFile(Paths.get("nka1.txt"))).forEach(System.out::println);
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
