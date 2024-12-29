@@ -37,7 +37,7 @@ public class State {
     /**
      * This function read from states from file
      * @param p Path to file in system
-     * @return List of States that describes NKA
+     * @return List of States that describes NFA
      */
     public static List<State> readNkaFromFile(Path p) throws IOException {
         List<State> states = new ArrayList<>();
@@ -80,7 +80,7 @@ public class State {
     }
 
     /**
-     * This function remove unreachable states from NKA that is described by List of States
+     * This function remove unreachable states from NFA that is described by List of States
      * @param states List of States that will be modified after applying this function
      */
     public static void removeUnreachableStates(List<State> states) {
@@ -107,9 +107,9 @@ public class State {
     }
 
     /**
-     *
-     * @param states
-     * @return
+     *  This function removes unnecessary states from
+     * @param states List of States that represents the DFA
+     * @return List of States that will represent the minimized DFA
      */
     public static List<State> minimizingDFA(List<State> states) {
         var partitionedStates = states.stream().collect(Collectors.partitioningBy(State::isFinalState, Collectors.toSet()));
@@ -123,7 +123,7 @@ public class State {
                 Map<String, Set<State>> groups = new HashMap<>();
                 for (State state : part) {
                     // TODO
-                    String key = getTransitionKey(state, partition);
+                    String key = getStateGroup(state, partition);
                     groups.computeIfAbsent(key, k -> new HashSet<>()).add(state);
                 }
                 newPartition.addAll(groups.values());
@@ -136,26 +136,27 @@ public class State {
         return createMinimizedDfa(partition, states); // TODO
     }
 
-    private static String getTransitionKey(State state, List<Set<State>> partitions) {
-        List<Integer> key = new ArrayList<>();
+    private static String getStateGroup(State state, List<Set<State>> partitions) {
+        StringBuilder key = new StringBuilder();
         List<String> symbols = new ArrayList<>(state.transitions.keySet());
-        Collections.sort(symbols);
 
         for (String symbol : symbols) {
             List<State> nextStates = state.transitions.get(symbol);
-            Set<State> nextStatePartition = partitions.stream()
-                    .filter(p -> p.stream().anyMatch(s -> nextStates.contains(s)))
-                    .findFirst()
-                    .orElse(null);
-            key.add(partitions.indexOf(nextStatePartition));
+            int nextStateIndex = -1;
+            for (Set<State> partition : partitions) {
+                if (partition.contains(nextStates.get(0))) { // Should be only one for DFA
+                    nextStateIndex = partitions.indexOf(partition);
+                    break;
+                }
+            }
+            key.append(nextStateIndex);
         }
-        return String.join(",", key.stream().map(String::valueOf).collect(Collectors.toList()));
+        return key.toString();
     }
 
     private static List<State> createMinimizedDfa(List<Set<State>> partitions, List<State> originalStates) {
         List<State> minimizedStates = new ArrayList<>();
-        for (int i = 0; i < partitions.size(); i++) {
-            Set<State> partition = partitions.get(i);
+        for (Set<State> partition : partitions) {
             State representative = partition.iterator().next();
             State newState = new State(representative.name, representative.isFinalState());
             minimizedStates.add(newState);
