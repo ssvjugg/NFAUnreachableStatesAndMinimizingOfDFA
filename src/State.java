@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class State {
+public final class State {
     private final String name;
     private boolean finalState;
     private final Map<String, List<State>> transitions;
@@ -114,15 +114,14 @@ public class State {
     public static List<State> minimizingDFA(List<State> states) {
         var partitionedStates = states.stream().collect(Collectors.partitioningBy(State::isFinalState, Collectors.toSet()));
         List<Set<State>> partition = List.of(partitionedStates.get(false), partitionedStates.get(true));  // Divided states into two groups
-        boolean flag;
+        boolean flag = true;
 
-        do {
+        while (flag) {
             List<Set<State>> newPartition = new ArrayList<>();
 
             for (Set<State> part : partition) {
                 Map<String, Set<State>> groups = new HashMap<>();
                 for (State state : part) {
-                    // TODO
                     String key = getStateGroup(state, partition);
                     groups.computeIfAbsent(key, k -> new HashSet<>()).add(state);
                 }
@@ -131,9 +130,9 @@ public class State {
 
             flag = newPartition.size() != partition.size();
             partition = newPartition;
-        } while (flag);
+        }
 
-        return createMinimizedDfa(partition, states); // TODO
+        return createMinimizedDfa(partition);
     }
 
     private static String getStateGroup(State state, List<Set<State>> partitions) {
@@ -154,8 +153,9 @@ public class State {
         return key.toString();
     }
 
-    private static List<State> createMinimizedDfa(List<Set<State>> partitions, List<State> originalStates) {
+    private static List<State> createMinimizedDfa(List<Set<State>> partitions) {
         List<State> minimizedStates = new ArrayList<>();
+        // Remove unnecessary states
         for (Set<State> partition : partitions) {
             State representative = partition.iterator().next();
             State newState = new State(representative.name, representative.isFinalState());
@@ -163,18 +163,17 @@ public class State {
         }
 
         // Make transitions
-        for (Set<State> partition : partitions) {
-            State representative = partition.iterator().next();
-            int newStateIndex = partitions.indexOf(partition);
+        for (int i = 0; i < partitions.size(); i++) {
+            State representative = partitions.get(i).iterator().next();
 
-            for (Map.Entry<String, List<State>> transition : representative.transitions.entrySet()) {
-                List<State> nextStates = transition.getValue();
+            for (var transition : representative.transitions.entrySet()) {
+                State nextState = transition.getValue().get(0);
                 Set<State> nextStatePartition = partitions.stream()
-                        .filter(p -> p.contains(nextStates.get(0)))
+                        .filter(p -> p.contains(nextState))
                         .findFirst()
                         .orElse(null);
                 int nextStateIndex = partitions.indexOf(nextStatePartition);
-                minimizedStates.get(newStateIndex).addTransition(transition.getKey(), minimizedStates.get(nextStateIndex));
+                minimizedStates.get(i).addTransition(transition.getKey(), minimizedStates.get(nextStateIndex));
             }
         }
 
