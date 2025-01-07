@@ -1,5 +1,5 @@
 # NFAUnreachableStatesAndMinimizingOfDFA
-This project implements the removal of unreachable states from an non-deterministic finite state machine (NFA).
+This project implements the removal of unreachable states from a non-deterministic finite state machine (NFA).
 Also, I added up a minimizing algorithm for the deterministic finite state machine (DFA).
 
 ---
@@ -18,6 +18,6 @@ Also, I added up a minimizing algorithm for the deterministic finite state machi
  \- G 0|G 1|G e|H  
   f H  
 ---
-*In the file, each state should be on a separate line with its transitions as in the example. It is also desirable that the first state be the initial one. Also "-" means that state is not final, "f" means final.*
+*In the file, each state should be on a separate line with its transitions as in the example. It is also desirable that the first state be the initial one. Also, "-" means that state is not final, "f" means final.*
 
 
