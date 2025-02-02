@@ -1,4 +1,4 @@
-# NFAUnreachableStatesAndMinimizingOfDFA
+# NFA Unreachable States and Minimizing of DFA
 This project implements the removal of unreachable states from a non-deterministic finite state machine (NFA).
 Also, I added up a minimizing algorithm for the deterministic finite state machine (DFA).
 
